@@ -1,0 +1,1 @@
+/usr/bin/g++  -g   CMakeFiles/NetworkSystem.dir/main.cpp.o CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o CMakeFiles/NetworkSystem.dir/ndvp/util.cpp.o  -o NetworkSystem -lpthread 

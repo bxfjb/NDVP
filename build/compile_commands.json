@@ -1,0 +1,17 @@
+[
+{
+  "directory": "/home/zyh/ndvp/build",
+  "command": "/usr/bin/g++    -g   -std=gnu++1z -o CMakeFiles/NetworkSystem.dir/main.cpp.o -c /home/zyh/ndvp/main.cpp",
+  "file": "/home/zyh/ndvp/main.cpp"
+},
+{
+  "directory": "/home/zyh/ndvp/build",
+  "command": "/usr/bin/g++    -g   -std=gnu++1z -o CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o -c /home/zyh/ndvp/ndvp/ndvp.cpp",
+  "file": "/home/zyh/ndvp/ndvp/ndvp.cpp"
+},
+{
+  "directory": "/home/zyh/ndvp/build",
+  "command": "/usr/bin/g++    -g   -std=gnu++1z -o CMakeFiles/NetworkSystem.dir/ndvp/util.cpp.o -c /home/zyh/ndvp/ndvp/util.cpp",
+  "file": "/home/zyh/ndvp/ndvp/util.cpp"
+}
+]
