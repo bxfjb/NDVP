@@ -21,6 +21,7 @@
 #include <memory>
 #include <unordered_map>
 #include <thread>
+#include <iostream>
 
 class Router;
 
@@ -60,18 +61,18 @@ struct AdvertisePacket {
 };
 
 class Router {
-    #define PORT_BEGIN 12344
+    #define NDVP_PORT 12345
 public:
     Router(uint16_t router_id, uint32_t AS_number, const char *local_ip):
         m_router_id(router_id), m_AS_number(AS_number), m_local_ip(local_ip) {
-            m_port = PORT_BEGIN + m_router_id;
+            m_port = NDVP_PORT;
             RecvWork();
-            printf("R%u RecvWork() Start\n", m_router_id);
+            fprintf(stdout, "R[%u] RecvWork() Start\n", m_router_id);
         }
 
     ~Router() {
         m_recv_thread.join();
-        printf("R%u End\n", m_router_id);
+        fprintf(stdout, "R[%u] End\n", m_router_id);
     }
     
     uint16_t m_router_id;
@@ -79,12 +80,16 @@ public:
     const char* m_local_ip;
     uint16_t m_port;
     std::unordered_map<uint16_t, const char*> m_peer_table; // <router-id,ip>
-    std::vector<Path> m_adj_out;
+    std::vector<Path*> m_adj_out;
+    std::vector<PathInPacket> m_adj_in;
+    std::unordered_map<uint16_t, std::vector<Path>> m_rib;
+    std::unordered_map<uint16_t, Path*> m_fib; // <in_label, path>
 
     std::thread m_recv_thread;
+    std::thread m_hello_thread;
 
     int SendHello(const char* peer_addr, uint16_t peer_port);
-    int SendAdvertise();
+    int SendAdvertise(uint16_t peer_port);
 
     int RecvPacket(const char* local_ip);
 
@@ -92,6 +97,16 @@ public:
     int ParseAdvertise(const char* data, struct AdvertisePacket* advertise);
 
     void RecvWork();
+    void HelloWork();
+
+
+    void ShowInfo() {
+        std::cout << "----------------------------------" << std::endl;
+        std::cout << "Peer Table" << std::endl;
+        for (auto &i:m_peer_table) {
+            std::cout << "Peer id:[" << i.first << "], IP:[" << i.second << "]" << std::endl;
+        }
+    }
 
 };
 
