@@ -8,6 +8,7 @@
 class NetUtil {
 public:
     static int makeSocket(int type, int protocol);
+    static const char *getBroadIp(const char *ip, const char *netmask);
 };
 
 #endif //NETWORKSYSTEM_UTIL_H

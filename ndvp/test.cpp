@@ -22,6 +22,8 @@ int work(const char* peer_addr) {
     addr.sin_addr.s_addr = inet_addr(peer_addr);
     addr.sin_port = htons(1234);
     s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    int sock_opt = 1;
+    setsockopt(s, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &sock_opt, sizeof(sock_opt));
     if (s < 0) {
         perror("socket");
         return -1;

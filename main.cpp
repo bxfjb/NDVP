@@ -10,9 +10,16 @@
 // NetworkSystem local_id local_ip [peer_ip]
 int main(int argc,char *argv[]) {
     int router_id = atoi(argv[1]);
-    const char* local_ip = argv[2];
+    std::cout << "This is router[" << router_id << "]" << std::endl;
+
+    std::vector<std::pair<const char*, const char*>> local_ip;
+    for (int i = 2;i < argc;i+=2) {
+        const char* ip = argv[i];
+        const char* mask = argv[i+1];
+        std::cout << "ip:[" << ip << "], mask:[" << mask << "]" << std::endl;
+        local_ip.emplace_back(ip, mask);
+    }
     auto r1 = std::make_shared<Router>(router_id,AS_NUMBER,local_ip);
-    std::cout << "id:" << router_id <<  " ip:" << local_ip << std::endl;
     Attribute attr;
     attr.delay = 6;
     attr.bandwidth = 7;
@@ -25,14 +32,9 @@ int main(int argc,char *argv[]) {
     p.sid = 5;
     p.attr = attr;
 
-    for (int i = 3;i < argc;++i) {
-        const char* peer_ip = argv[i];
-        std::cout << "peer:" << peer_ip << std::endl;
-        r1->SendHello(peer_ip, 12345);
-    }
-
     sleep(5);
 
+    r1->SendHello();
     r1->ShowInfo();
     r1->m_adj_out.emplace_back(&p);
     r1->m_adj_out.emplace_back(&p);

@@ -8,7 +8,7 @@
 #include <iostream>
 
 
-int Router::SendHello(const char* peer_addr, uint16_t peer_port) {
+int Router::SendHello() {
     int ret, socket;
     struct sockaddr_in addr;
 
@@ -17,7 +17,38 @@ int Router::SendHello(const char* peer_addr, uint16_t peer_port) {
     hello.AS_number = htonl(m_AS_number);
 
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(peer_port);
+    addr.sin_port = htons(NDVP_PORT);
+
+    socket = NetUtil::makeSocket(SOCK_DGRAM, 0);
+    int sock_opt = 1;
+    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_BROADCAST, &sock_opt, sizeof(sock_opt));
+
+    for (auto &p:m_local_ip) {
+        const char* broadcast_addr = NetUtil::getBroadIp(p.first, p.second);
+        addr.sin_addr.s_addr = inet_addr(broadcast_addr);
+
+        ret = sendto(socket, (char *) &hello, sizeof(hello), 0, (struct sockaddr *) &addr, sizeof(addr));
+        if (ret < 1) {
+            perror("sendto");
+            return -1;
+        }
+    }
+
+    close(socket);
+
+    return 0;
+}
+
+int Router::ResponseHello(const char* peer_addr) {
+    int ret, socket;
+    struct sockaddr_in addr;
+
+    struct HelloPacket hello;
+    hello.router_id = htons(m_router_id);
+    hello.AS_number = htonl(m_AS_number);
+
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(NDVP_PORT);
     addr.sin_addr.s_addr = inet_addr(peer_addr);
     socket = NetUtil::makeSocket(SOCK_DGRAM, 0);
 
@@ -78,6 +109,9 @@ int Router::RecvPacket(const char* local_ip) {
 
     socket = NetUtil::makeSocket(SOCK_DGRAM, 0);
 
+    int opt = 1;
+    setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(local_ip);
     addr.sin_port = htons(m_port);
@@ -103,7 +137,7 @@ int Router::RecvPacket(const char* local_ip) {
                     fprintf(stdout, "Get Hello from:id[%hu], ip[%s]\n", hello.router_id, peer_addr);
                     if (m_peer_table.count(hello.router_id) == 0) {
                         m_peer_table[hello.router_id] = peer_addr;
-                        SendHello(peer_addr, 12345);
+                        ResponseHello(peer_addr);
                         fprintf(stdout, "Send Hello to:id[%hu], ip[%s]\n", hello.router_id, peer_addr);
                     }
                 }
@@ -171,7 +205,8 @@ int Router::ParseAdvertise(const char* data, struct AdvertisePacket* advertise) 
 }
 
 void Router::RecvWork() {
-    m_recv_thread = std::thread(&Router::RecvPacket, this, m_local_ip);
+    for (auto &addr:m_local_ip)
+        m_recv_threads.emplace_back(&Router::RecvPacket, this, addr.first);
 }
 
 void Router::HelloWork() {

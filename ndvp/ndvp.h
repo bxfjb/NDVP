@@ -63,7 +63,7 @@ struct AdvertisePacket {
 class Router {
     #define NDVP_PORT 12345
 public:
-    Router(uint16_t router_id, uint32_t AS_number, const char *local_ip):
+    Router(uint16_t router_id, uint32_t AS_number, std::vector<std::pair<const char*,const char*>>&local_ip):
         m_router_id(router_id), m_AS_number(AS_number), m_local_ip(local_ip) {
             m_port = NDVP_PORT;
             RecvWork();
@@ -71,13 +71,14 @@ public:
         }
 
     ~Router() {
-        m_recv_thread.join();
+        for (auto &t:m_recv_threads)
+            t.join();
         fprintf(stdout, "R[%u] End\n", m_router_id);
     }
     
     uint16_t m_router_id;
     uint32_t m_AS_number;
-    const char* m_local_ip;
+    std::vector<std::pair<const char*,const char*>> m_local_ip;
     uint16_t m_port;
     std::unordered_map<uint16_t, const char*> m_peer_table; // <router-id,ip>
     std::vector<Path*> m_adj_out;
@@ -85,11 +86,13 @@ public:
     std::unordered_map<uint16_t, std::vector<Path>> m_rib;
     std::unordered_map<uint16_t, Path*> m_fib; // <in_label, path>
 
-    std::thread m_recv_thread;
+    std::vector<std::thread> m_recv_threads;
     std::thread m_hello_thread;
 
-    int SendHello(const char* peer_addr, uint16_t peer_port);
+    int SendHello();
     int SendAdvertise(uint16_t peer_port);
+
+    int ResponseHello(const char* peer_addr);
 
     int RecvPacket(const char* local_ip);
 
