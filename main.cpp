@@ -32,12 +32,12 @@ int main(int argc,char *argv[]) {
     p.sid = 5;
     p.attr = attr;
 
-    sleep(5);
+    sleep(10);
 
-    r1->SendHello();
+    //r1->SendHello();
     r1->ShowInfo();
     r1->m_adj_out.emplace_back(&p);
-    r1->m_adj_out.emplace_back(&p);
+    //r1->m_adj_out.emplace_back(&p);
     
-    r1->SendAdvertise(12345);
+    r1->SendAdvertise();
 }

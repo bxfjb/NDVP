@@ -61,6 +61,8 @@ thread
 -
 iostream
 -
+mutex
+-
 
 /home/zyh/ndvp/ndvp/util.cpp
 stdio.h
@@ -68,6 +70,8 @@ stdio.h
 stdlib.h
 -
 sys/socket.h
+-
+arpa/inet.h
 -
 util.h
 /home/zyh/ndvp/ndvp/util.h

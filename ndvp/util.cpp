@@ -16,7 +16,7 @@ int NetUtil::makeSocket(int type, int protocol) {
     return s;
 }
 
-const char *getBroadIp(const char *ip, const char *netmask)
+const char* NetUtil::getBroadIp(const char *ip, const char *netmask)
 {
     struct in_addr addr;
     struct in_addr mask ;
