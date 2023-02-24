@@ -88,9 +88,8 @@ struct AdvertiseInvalidPacket {
 
 class Router {
     #define NDVP_PORT 12345
+    #define NAP_PORT 12346
     #define FIRST_HELLO 5
-    #define EDGE_PATH "./edge.tsv"
-    #define COM_PATH "./com.tsv"
     enum criteria {
         unknown,
         SW = 1,
@@ -148,12 +147,14 @@ public:
     std::vector<std::pair<PathInvalidInPacket,uint16_t>> m_adj_in_invalid;
     std::unordered_map<uint16_t, std::vector<Path>> m_rib;
     std::unordered_map<uint16_t, Path> m_fib; // <in_label, path>
+    std::unordered_map<uint16_t, Path> m_buff_fib; // <stream_number, path>
 
     std::vector<std::thread> m_recv_threads;
     std::thread m_adj_in_thread;
     std::thread m_adj_out_thread;
     std::thread m_adj_ini_thread;
     std::thread m_adj_outi_thread;
+    std::thread m_NAP_thread;
 
     int m_proto_type = 0;  // 0--NVDP 1--PDP 2--EIGRP
     int m_next_label = 1;
@@ -186,6 +187,8 @@ public:
     void CheckAdjIn();
     void CheckAdjOutInvalid();
     void CheckAdjInInvalid();
+
+    void RecvNapWork();
 
     void ShowInfo();
 

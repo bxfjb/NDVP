@@ -458,6 +458,7 @@ void Router::Shell() {
      * add_com
      * add_req      Integer(SID) [1-6](Criteria) [info]
      * show
+     * exit
      */
     
     while (1) {
@@ -487,6 +488,8 @@ void Router::Shell() {
             std::cout << "Got request info:" << cri_str[cri] << std::endl;
         } else if (buff == "show") {
             ShowInfo();
+        } else if (buff == "exit") {
+            exit(0);
         }
     }
 }
