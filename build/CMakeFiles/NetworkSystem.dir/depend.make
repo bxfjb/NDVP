@@ -5,6 +5,11 @@ CMakeFiles/NetworkSystem.dir/main.cpp.o: ../main.cpp
 CMakeFiles/NetworkSystem.dir/main.cpp.o: ../ndvp/ndvp.h
 CMakeFiles/NetworkSystem.dir/main.cpp.o: ../ndvp/util.h
 
+CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o: ../nap/nap.cpp
+CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o: ../nap/nap.h
+CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o: ../ndvp/ndvp.h
+CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o: ../ndvp/util.h
+
 CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o: ../ndvp/ndvp.cpp
 CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o: ../ndvp/ndvp.h
 CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o: ../ndvp/util.h

@@ -150,6 +150,33 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/NetworkSystem.dir/build.make CMakeFiles/NetworkSystem.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+nap/nap.o: nap/nap.cpp.o
+
+.PHONY : nap/nap.o
+
+# target to build an object file
+nap/nap.cpp.o:
+	$(MAKE) -f CMakeFiles/NetworkSystem.dir/build.make CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o
+.PHONY : nap/nap.cpp.o
+
+nap/nap.i: nap/nap.cpp.i
+
+.PHONY : nap/nap.i
+
+# target to preprocess a source file
+nap/nap.cpp.i:
+	$(MAKE) -f CMakeFiles/NetworkSystem.dir/build.make CMakeFiles/NetworkSystem.dir/nap/nap.cpp.i
+.PHONY : nap/nap.cpp.i
+
+nap/nap.s: nap/nap.cpp.s
+
+.PHONY : nap/nap.s
+
+# target to generate assembly for a file
+nap/nap.cpp.s:
+	$(MAKE) -f CMakeFiles/NetworkSystem.dir/build.make CMakeFiles/NetworkSystem.dir/nap/nap.cpp.s
+.PHONY : nap/nap.cpp.s
+
 ndvp/ndvp.o: ndvp/ndvp.cpp.o
 
 .PHONY : ndvp/ndvp.o
@@ -216,6 +243,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... nap/nap.o"
+	@echo "... nap/nap.i"
+	@echo "... nap/nap.s"
 	@echo "... ndvp/ndvp.o"
 	@echo "... ndvp/ndvp.i"
 	@echo "... ndvp/ndvp.s"

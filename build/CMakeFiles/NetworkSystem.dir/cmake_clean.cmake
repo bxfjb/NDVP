@@ -2,6 +2,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/NetworkSystem.dir/main.cpp.o"
   "CMakeFiles/NetworkSystem.dir/ndvp/ndvp.cpp.o"
   "CMakeFiles/NetworkSystem.dir/ndvp/util.cpp.o"
+  "CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o"
   "NetworkSystem.pdb"
   "NetworkSystem"
 )

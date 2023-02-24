@@ -16,6 +16,22 @@ ndvp/ndvp.h
 ndvp/util.h
 /home/zyh/ndvp/ndvp/util.h
 
+/home/zyh/ndvp/nap/nap.cpp
+sstream
+-
+fstream
+-
+nap.h
+/home/zyh/ndvp/nap/nap.h
+../ndvp/util.h
+/home/zyh/ndvp/ndvp/util.h
+
+/home/zyh/ndvp/nap/nap.h
+thread
+-
+../ndvp/ndvp.h
+/home/zyh/ndvp/ndvp/ndvp.h
+
 /home/zyh/ndvp/ndvp/ndvp.cpp
 ndvp.h
 /home/zyh/ndvp/ndvp/ndvp.h

@@ -27,6 +27,10 @@
 
 class Router;
 
+#define NDVP_PORT 12345
+#define NAP_PORT 12346
+#define FIRST_HELLO 5
+
 struct Attribute{
     uint32_t delay;
     uint32_t bandwidth;
@@ -86,10 +90,25 @@ struct AdvertiseInvalidPacket {
     PathInvalidInPacket paths[];
 };
 
+struct RequestPacket {
+    uint8_t type = 1;
+    uint8_t checksum = 0;
+    uint16_t sid;
+    uint16_t criteria;
+    uint16_t stream_num;
+    uint32_t info[];
+};
+
+struct PayloadPacket {
+    uint8_t type = 1;
+    uint8_t checksum = 0;
+    uint16_t content_length;
+    uint16_t label;
+    uint16_t stream_number;
+    char data[];
+};
+
 class Router {
-    #define NDVP_PORT 12345
-    #define NAP_PORT 12346
-    #define FIRST_HELLO 5
     enum criteria {
         unknown,
         SW = 1,
@@ -188,13 +207,14 @@ public:
     void CheckAdjOutInvalid();
     void CheckAdjInInvalid();
 
-    void RecvNapWork();
-
     void ShowInfo();
 
     void Shell();       // Interactive shell, init request or delete
 
-    void CalculateBestPath();
+    void CalculateBestPath(RequestPacket* request);
+
+    std::pair<uint16_t, std::string> GetLabelByNumber(uint16_t stream_number);
+    std::pair<uint16_t, std::string> GetLabelByLabel(uint16_t label);
 
 private:
     void init();        // Read in edge data and com data if exists
@@ -209,6 +229,8 @@ private:
 
     void add_path(std::vector<Path> &path_set, Path &path);
     void delete_path(Path path);
+
+    bool better(Attribute a1, Attribute a2, uint16_t criteria, uint32_t k = 0, uint32_t k1 = 0, uint32_t w = 0);
 };
 
 

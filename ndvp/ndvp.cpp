@@ -494,6 +494,68 @@ void Router::Shell() {
     }
 }
 
+void Router::CalculateBestPath(RequestPacket *request)
+{
+    auto path_set = m_rib.find(request->sid);
+    if (path_set == m_rib.end()) {
+        return;
+    }
+    if (m_proto_type == 2) {
+        m_buff_fib.emplace(request->stream_num, path_set->second[0]);
+    } else {
+        Path* path = &path_set->second[0];
+        for (int i = 1;i < path_set->second.size();++i) {
+            Path* next = &path_set->second[i];
+            if (request->criteria == 1 || request->criteria == 2) {
+                if (better(path->attr, next->attr, request->criteria)) {
+                    path = next;
+                }
+            } else if (request->criteria == 3) {
+                if (better(path->attr, next->attr, request->criteria, request->info[0])) {
+                    path = next;
+                }
+            } else if (request->criteria == 4) {
+                if (better(path->attr, next->attr, request->criteria, 0, 0, request->info[0])) {
+                    path = next;
+                }
+            } else if (request->criteria == 5) {
+                if (better(path->attr, next->attr, request->criteria, request->info[0], request->info[1])) {
+                    path = next;
+                }
+            } else if (request->criteria == 6) {
+                if (better(path->attr, next->attr, request->criteria, request->info[0], request->info[1], request->info[2])) {
+                    path = next;
+                }
+            }
+            
+        }
+        m_buff_fib.emplace(request->stream_num, *path);
+    }
+}
+
+std::pair<uint16_t, std::string> Router::GetLabelByNumber(uint16_t stream_number)
+{
+    std::pair<uint16_t, std::string> ret;
+    auto path = m_buff_fib.find(stream_number);
+    if (path!=m_buff_fib.end()) {
+        ret.first = path->second.out_label;
+        ret.second = m_peer_table[path->second.next_hop_id];
+    }
+    return ret;
+}
+
+std::pair<uint16_t, std::string> Router::GetLabelByLabel(uint16_t label)
+{
+    std::pair<uint16_t, std::string> ret;
+    auto path = m_fib.find(label);
+    if (path!=m_buff_fib.end()) {
+        ret.first = path->second.out_label;
+        ret.second = m_peer_table[path->second.next_hop_id];
+    }
+    return ret;
+    
+}
+
 void Router::init()
 {
     read_edge_data();
@@ -624,4 +686,34 @@ void Router::delete_path(Path path)
     m_fib.erase(path.in_label);
     std::lock_guard<std::mutex> lock(m_adj_outi_mutex);
     m_adj_out_invalid.push_back(path);
+}
+
+
+bool Router::better(Attribute a1, Attribute a2, uint16_t criteria, uint32_t k, uint32_t k1, uint32_t w){
+    if (criteria == 1)
+        return a1.bandwidth > a2.bandwidth || (a1.bandwidth == a2.bandwidth && a1.delay <= a2.delay);
+    else if (criteria == 2)
+        return a1.delay < a2.delay || (a1.delay == a2.delay && a1.bandwidth >= a2.bandwidth);
+    else if (criteria == 3) {
+        double t1 = (double)k/a1.bandwidth + a1.delay;
+        double t2 = (double)k/a2.bandwidth + a2.delay;
+        return t1 < t2 || (t1 == t2 && a1.bandwidth >= a2.bandwidth);
+    }
+    else if (criteria == 4) {
+        return (a1.bandwidth >= w && (a2.bandwidth < w || better(a1,a2,2)))
+                                    || (a1.bandwidth < w && better(a1,a2,1));
+    }
+    else if (criteria == 5) {
+        double t1 = (double)k/a1.bandwidth + a1.delay + (double)k1/a1.computing_rate;
+        double t2 = (double)k/a2.bandwidth + a2.delay + (double)k1/a2.computing_rate;
+        return t1 < t2 || (t1 == t2 && a1.bandwidth >= a2.bandwidth);
+    }
+    else if (criteria == 6) {
+        double t1 = (double)k/a1.bandwidth + a1.delay + (double)k1/a1.computing_rate;
+        double t2 = (double)k/a2.bandwidth + a2.delay + (double)k1/a2.computing_rate;
+        return (a1.bandwidth >= w && (a2.bandwidth < w || better(a1,a2,5,k,k1))) ||
+                (a1.bandwidth < w && (a1.bandwidth > a2.bandwidth || (a1.bandwidth == a2.bandwidth && t1 <= t2)));
+    } else
+        return false;
+
 }

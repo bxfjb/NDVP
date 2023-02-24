@@ -13,5 +13,10 @@
   "directory": "/home/zyh/ndvp/build",
   "command": "/usr/bin/g++    -g   -std=gnu++1z -o CMakeFiles/NetworkSystem.dir/ndvp/util.cpp.o -c /home/zyh/ndvp/ndvp/util.cpp",
   "file": "/home/zyh/ndvp/ndvp/util.cpp"
+},
+{
+  "directory": "/home/zyh/ndvp/build",
+  "command": "/usr/bin/g++    -g   -std=gnu++1z -o CMakeFiles/NetworkSystem.dir/nap/nap.cpp.o -c /home/zyh/ndvp/nap/nap.cpp",
+  "file": "/home/zyh/ndvp/nap/nap.cpp"
 }
 ]
