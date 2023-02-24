@@ -1,45 +1,50 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
-#include <netdb.h>
+#include <bits/stdc++.h>
 
-int work(const char* peer_addr) {
-    int ret, s;
-    struct sockaddr_in addr;
-
-    char buff[] = "test packet";
-
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(peer_addr);
-    addr.sin_port = htons(1234);
-    s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    int sock_opt = 1;
-    setsockopt(s, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &sock_opt, sizeof(sock_opt));
-    if (s < 0) {
-        perror("socket");
-        return -1;
+struct Attribute{
+    uint32_t delay;
+    uint32_t bandwidth;
+    uint32_t computing_rate;
+    Attribute operator+(Attribute &a1) {
+        Attribute a2;
+        a2.delay = delay + a1.delay;
+        a2.bandwidth = std::min(bandwidth, a1.bandwidth);
+        a2.computing_rate = std::max(computing_rate, a1.computing_rate);
+        return a2;
     }
 
-    ret = sendto(s, buff, sizeof(buff), 0, (struct sockaddr*)&addr, sizeof(addr));
-    if (ret < 1) {
-        perror("sendto");
-        return -1;
+    bool operator==(Attribute &a1) {
+        return delay == a1.delay && bandwidth == a1.bandwidth && computing_rate == a1.computing_rate;
     }
+};
 
-    close(s);
-
-    return 0;
-}
+struct PathInPacket {
+    uint16_t sid;
+    uint16_t in_label;
+    Attribute attr;
+};
 
 int main() {
-    work("10.0.2.15");
+    std::stringstream datastr;
+    std::string data;
+    std::ifstream ifs;
+    uint16_t sid;
+    uint32_t com;
+    
+    ifs.open("com.tsv", std::ios::in);
+    if(!ifs.is_open())
+    {
+        std::cerr<<"cannot open the com file\n";
+    }
+    while (std::getline(ifs, data)) {
+        datastr << data;
+        datastr >> sid >> com;
+        PathInPacket pip;
+        pip.sid = sid;
+        pip.in_label = 0;
+        pip.attr.delay = 0;
+        pip.attr.bandwidth = UINT32_MAX;
+        pip.attr.computing_rate = com;
+        std::cout << pip.sid << " ";
+        datastr.clear();
+    }
 }

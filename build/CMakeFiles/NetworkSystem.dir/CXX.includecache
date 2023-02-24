@@ -25,6 +25,10 @@ string.h
 -
 iostream
 -
+fstream
+-
+sstream
+-
 
 /home/zyh/ndvp/ndvp/ndvp.h
 stdio.h
@@ -50,6 +54,8 @@ netinet/ip.h
 arpa/inet.h
 -
 netdb.h
+-
+string
 -
 vector
 -

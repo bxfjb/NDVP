@@ -17,6 +17,7 @@
 #include <netinet/ip.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <string>
 #include <vector>
 #include <memory>
 #include <unordered_map>
@@ -28,12 +29,12 @@ class Router;
 
 struct Attribute{
     uint32_t delay;
-    uint32_t computing_rate;
     uint32_t bandwidth;
+    uint32_t computing_rate;
     Attribute operator+(Attribute &a1) {
         Attribute a2;
         a2.delay = delay + a1.delay;
-        a2.bandwidth = std::max(bandwidth, a1.bandwidth);
+        a2.bandwidth = std::min(bandwidth, a1.bandwidth);
         a2.computing_rate = std::max(computing_rate, a1.computing_rate);
         return a2;
     }
@@ -88,13 +89,41 @@ struct AdvertiseInvalidPacket {
 class Router {
     #define NDVP_PORT 12345
     #define FIRST_HELLO 5
+    #define EDGE_PATH "./edge.tsv"
+    #define COM_PATH "./com.tsv"
+    enum criteria {
+        unknown,
+        SW = 1,
+        WS,
+        K_Q,
+        W_S,
+        N_K_Q,
+        N_W_S,
+    };
+
+    std::string cri_str[7] = {
+        "unknown",
+        "SW",
+        "WS",
+        "K_Q",
+        "W_S",
+        "N_K_Q",
+        "N_W_S",
+    };
+
+    std::string proto_str[3] = {
+        "NDVP",
+        "PDP",
+        "EIGRP",
+    };
 public:
     Router(uint16_t router_id, uint32_t AS_number, std::vector<std::pair<const char*,const char*>>&local_ip, int proto_type = 0):
         m_router_id(router_id), m_AS_number(AS_number), m_local_ip(local_ip), m_proto_type(proto_type) {
             m_port = NDVP_PORT;
-            //init();
+            read_edge_data();
             RecvWork();
-            fprintf(stdout, "R[%u] RecvWork() Start\n", m_router_id);
+            //fprintf(stdout, "R[%u] RecvWork() Start\n-----------\n", m_router_id);
+            Shell();
         }
 
     ~Router() {
@@ -111,14 +140,14 @@ public:
     uint32_t m_AS_number;
     std::vector<std::pair<const char*,const char*>> m_local_ip;
     uint16_t m_port;
-    std::unordered_map<uint16_t, const char*> m_peer_table; // <router-id,ip>
+    std::unordered_map<uint16_t, std::string> m_peer_table; // <router-id,ip>
     std::unordered_map<uint16_t, Attribute> m_edge_table;   // <router-id,edge>
-    std::vector<Path*> m_adj_out;           // only use data so pointer
+    std::vector<Path> m_adj_out;           // only use data so pointer
     std::vector<Path> m_adj_out_invalid;    // when path is added in here, the origin object is free, we need create a new path, so data
     std::vector<std::pair<PathInPacket,uint16_t>> m_adj_in; // second element is sender's router-id
     std::vector<std::pair<PathInvalidInPacket,uint16_t>> m_adj_in_invalid;
     std::unordered_map<uint16_t, std::vector<Path>> m_rib;
-    std::unordered_map<uint16_t, std::vector<Path>::iterator*> m_fib; // <in_label, path>
+    std::unordered_map<uint16_t, Path> m_fib; // <in_label, path>
 
     std::vector<std::thread> m_recv_threads;
     std::thread m_adj_in_thread;
@@ -134,6 +163,7 @@ public:
     std::mutex m_adj_ini_mutex;
     std::mutex m_adj_out_mutex;
     std::mutex m_adj_outi_mutex;
+    std::mutex m_peer_table_mutex;
 
     int SendHello();                            // broadcast Hello packet
     int SendAdvertise();
