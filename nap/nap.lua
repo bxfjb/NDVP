@@ -20,7 +20,7 @@ do
     --这里把NAP协议的全部字段都加到p_NAP这个变量的fields字段里
     p_NAP.fields = {
         f_type, f_checksum,
-        f_sid, f_criteria, f_k, f_k1, f_w
+        f_sid, f_criteria, f_stream_number, f_k, f_k1, f_w,
         f_content_length,  f_label, f_payload
     }
 
@@ -80,7 +80,7 @@ do
         if v_type == 1 then
             local c_type  = get_criteria_type(buff(4,2):uint())
             payload_subtree:add(f_sid,buff(2,2))
-            payload_subtree:add(f_criteria,buff(4,2):append_text(" ("..c_type..")"))
+            payload_subtree:add(f_criteria,buff(4,2)):append_text(" ("..c_type..")")
             payload_subtree:add(f_stream_number,buff(6,2))
             local v_cri = buff(4,2):uint()
             if v_cri == 3 then
@@ -99,7 +99,7 @@ do
             payload_subtree:add(f_stream_number,buff(2,2))
         elseif v_type == 3 then
             local v_content_len = buff(2,2):uint()
-            payload_subtree:add(f_content_length,buff(2,2):append_text("*16Byte"))
+            payload_subtree:add(f_content_length,buff(2,2)):append_text("*16Byte")
             payload_subtree:add(f_label,buff(4,2))
             payload_subtree:add(f_stream_number,buff(6,2))
             payload_subtree:add(f_payload,buff(8,v_content_len*16))
