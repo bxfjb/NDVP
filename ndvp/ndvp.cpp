@@ -388,9 +388,6 @@ void Router::RecvWork() {
     m_adj_ini_thread = std::thread(&Router::CheckAdjInInvalid, this);
     m_adj_out_thread = std::thread(&Router::CheckAdjOut, this);
     m_adj_outi_thread = std::thread(&Router::CheckAdjOutInvalid, this);
-
-    sleep(FIRST_HELLO);
-    SendHello();
 }
 
 void Router::CheckAdjIn() {
@@ -543,7 +540,7 @@ void Router::CalculateBestPath(RequestPacket *request)
 
 std::pair<uint16_t, std::string> Router::GetLabelByNumber(uint16_t stream_number)
 {
-    std::pair<uint16_t, std::string> ret;
+    std::pair<uint16_t, std::string> ret(65535, "");
     auto path = m_buff_fib.find(stream_number);
     if (path!=m_buff_fib.end()) {
         ret.first = path->second.out_label;
@@ -554,7 +551,7 @@ std::pair<uint16_t, std::string> Router::GetLabelByNumber(uint16_t stream_number
 
 std::pair<uint16_t, std::string> Router::GetLabelByLabel(uint16_t label)
 {
-    std::pair<uint16_t, std::string> ret;
+    std::pair<uint16_t, std::string> ret(65535, "");
     auto path = m_fib.find(label);
     if (path!=m_buff_fib.end()) {
         ret.first = path->second.out_label;

@@ -16,6 +16,10 @@ public:
         RecvWork();
         fprintf(stdout, "NAP Server running...\n");
     }
+
+    ~Server() {
+        m_recv_thread.join();
+    }
     void RecvWork();
     int RecvPacket();
 

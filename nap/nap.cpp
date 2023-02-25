@@ -55,6 +55,7 @@ int Server::RecvPacket() {
                     m_router->CalculateBestPath(request);
                     client_addr.sin_port = htons(NAP_PORT);
                     SendResponse((struct sockaddr*)&client_addr, request->stream_num);
+                    fprintf(stdout, "Send NAP Response\n");
                 }
                 free(request);
             } else if (type == 3) {
@@ -67,18 +68,22 @@ int Server::RecvPacket() {
                 if (ParsePayload(buff, payload) >= 0) {
                     fprintf(stdout, "Parse NAP Payload packet success, length[%d]\n", p_len);
                     uint16_t out_label = 0;
-                    std::pair<uint16_t,std::string> next;
+                    std::pair<uint16_t,std::string> next(65535,"");
                     if (payload->label == 0) {
                         next = m_router->GetLabelByNumber(payload->stream_number);
                     } else {
                         next = m_router->GetLabelByLabel(payload->label);
                     }
-                    if (next.first == 0) {
+                    if (next.first == 65535) {
+                        fprintf(stdout, "No available path, dump");
+                    } else if (next.first == 0) {
                         fprintf(stdout, "Enter Egress node\n");
                     } else if (!next.second.empty()) {
                         
                         Forward(buff, next.first, next.second, p_len);
                         fprintf(stdout, "Forward payload to [%s]\n", next.second.c_str());
+                    } else {
+                        fprintf(stdout, "Parse result label[%hu], next_hop[%s]\n", next.first, next.second.c_str());
                     }
                 }
                 free(payload);

@@ -146,8 +146,11 @@ public:
             m_port = NDVP_PORT;
             read_edge_data();
             RecvWork();
-            //fprintf(stdout, "R[%u] RecvWork() Start\n-----------\n", m_router_id);
-            //Shell();
+            
+            sleep(FIRST_HELLO);
+            SendHello();
+            sleep(5);
+            read_com_data();
         }
 
     ~Router() {
