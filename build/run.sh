@@ -15,5 +15,5 @@ docker cp ../ndvp/data/edge_3.tsv r3:/home/
 docker cp ../ndvp/data/edge_4.tsv r4:/home/
 docker cp ../ndvp/data/edge_5.tsv r5:/home/
 docker cp ../ndvp/data/edge_6.tsv r6:/home/
-docker cp ../nap/data/req.tsv r6:/home/
-docker cp ../nap/data/payload.data r6:/home/
+docker cp ../nap/data/req.tsv c1:/home/
+docker cp ../nap/data/payload.data c1:/home/

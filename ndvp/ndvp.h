@@ -99,8 +99,14 @@ struct RequestPacket {
     uint32_t info[];
 };
 
+struct ResponsePacket {
+    uint8_t type = 2;
+    uint8_t checksum = 0;
+    uint16_t stream_num;
+};
+
 struct PayloadPacket {
-    uint8_t type = 1;
+    uint8_t type = 3;
     uint8_t checksum = 0;
     uint16_t content_length;
     uint16_t label;
@@ -141,7 +147,7 @@ public:
             read_edge_data();
             RecvWork();
             //fprintf(stdout, "R[%u] RecvWork() Start\n-----------\n", m_router_id);
-            Shell();
+            //Shell();
         }
 
     ~Router() {

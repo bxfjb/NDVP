@@ -1,100 +1,113 @@
 do
-    --协议名称为NDVP，在Packet Details窗格显示为New Distance Vector Protocol
-    local p_NDVP = Proto("NDVP","New Distance Vector Protocol")
+    --协议名称为NAP，在Packet Details窗格显示为New Distance Vector Protocol
+    local p_NAP = Proto("NAP","New Application Protocol")
     --Header
-    local f_type = ProtoField.uint8("NDVP.type","type", base.DEC)
-    local f_checksum = ProtoField.uint8("NDVP.checksum", "checksum", base.HEX)
-    local f_router_id = ProtoField.uint16("NDVP.originator_id", "originator_id", base.DEC)
+    local f_type = ProtoField.uint8("NAP.type","type", base.DEC)
+    local f_checksum = ProtoField.uint8("NAP.checksum", "checksum", base.HEX)
 
     --Payload
-    local f_as_number = ProtoField.uint32("NDVP.as_number", "as_number", base.DEC)
+    local f_sid = ProtoField.uint16("NAP.sid", "sid", base.DEC)
+    local f_criteria = ProtoField.uint16("NAP.criteria", "criteria", base.DEC)
+    local f_stream_number = ProtoField.uint16("NAP.stream_number", "stream_number", base.DEC)
+    local f_k = ProtoField.uint32("NAP.Info.K", "K", base.DEC)
+    local f_k1 = ProtoField.uint32("NAP.Info.K1", "K1", base.DEC)
+    local f_w = ProtoField.uint32("NAP.Info.W", "W", base.DEC)
 
-    local f_paths_number = ProtoField.uint32("NDVP.path_number", "path_number", base.DEC)
-    local f_path_sid = ProtoField.uint16("NDVP.path.sid", "sid", base.DEC)
-    local f_path_label = ProtoField.uint16("NDVP.path.label", "label", base.DEC)
-    local f_path_delay = ProtoField.uint32("NDVP.path.delay", "delay", base.DEC)
-    local f_path_bandwidth = ProtoField.uint32("NDVP.path.bandwidth", "bandwidth", base.DEC)
-    local f_path_com = ProtoField.uint32("NDVP.path.computing_rate", "computing_rate", base.DEC)
+    local f_content_length = ProtoField.uint16("NAP.content_length", "content_length", base.DEC)
+    local f_label = ProtoField.uint16("NAP.label", "label", base.DEC)
+    local f_payload = ProtoField.string("NAP.payload", "payload", base.ASCII)
 
-    local f_paths_invalid_number = ProtoField.uint32("NDVP.invalid_path_number", "invalid_path_number", base.DEC)
-    local f_path_invalid_sid = ProtoField.uint16("NDVP.invalid_path.sid", "sid", base.DEC)
-    local f_path_invalid_label = ProtoField.uint16("NDVP.invalid_path.label", "label", base.DEC)
-
-    --这里把NDVP协议的全部字段都加到p_NDVP这个变量的fields字段里
-    p_NDVP.fields = {
-        f_type, f_checksum, f_router_id,
-        f_as_number,
-        f_paths_number, f_path_sid, f_path_label, f_path_delay, f_path_bandwidth, f_path_com,
-        f_paths_invalid_number,  f_path_invalid_sid, f_path_invalid_label
+    --这里把NAP协议的全部字段都加到p_NAP这个变量的fields字段里
+    p_NAP.fields = {
+        f_type, f_checksum,
+        f_sid, f_criteria, f_k, f_k1, f_w
+        f_content_length,  f_label, f_payload
     }
 
     local function get_packet_type(type)
         local packet_type = "Unknown Type"
 
         if type == 1 then 
-            packet_type = "NDVP_HELLO"
+            packet_type = "NAP_REQUEST"
         elseif type == 2 then 
-            packet_type = "NDVP_ADVERTISE"
+            packet_type = "NAP_RESPONSE"
         elseif type == 3 then
-            packet_type = "NDVP_INVALID"
+            packet_type = "NAP_PAYLOAD"
         end
 
         return packet_type
     end
 
-    function p_NDVP.dissector(buff,pinfo,tree)
+    local function get_criteria_type(type)
+        local criteria_type = "Unknown Type"
+        if type == 1 then 
+            criteria_type = "Shortest-Widest"
+        elseif type == 2 then 
+            criteria_type = "Widest-Shortest"
+        elseif type == 3 then
+            criteria_type = "K-Quickest order"
+        elseif type == 4 then
+            criteria_type = "W-wide-Shortest order"
+        elseif type == 5 then
+            criteria_type = "Neo-K-Quickest order"
+        elseif type == 6 then
+            criteria_type = "Neo-W-wide-Shortest order"
+        end
+
+        return criteria_type
+    end
+
+    function p_NAP.dissector(buff,pinfo,tree)
         buf_len = buff:len()
         --先检查报文长度
         if buf_len == 0 then return end
 
         --在Packet List窗格的Protocol列可以展示出协议的名称
-        pinfo.cols.protocol = p_NDVP.name
+        pinfo.cols.protocol = p_NAP.name
 
         --Tree
-        local subtree = tree:add(p_NDVP,buff(),"New Distance Vector Protocol Data")
-        local header_subtree = subtree:add(p_NDVP, buff(), "Header")
-        local payload_subtree = subtree:add(p_NDVP, buff(), "Payload")
+        local subtree = tree:add(p_NAP,buff(),"New Application Protocol Data")
+        local header_subtree = subtree:add(p_NAP, buff(), "Header")
+        local payload_subtree = subtree:add(p_NAP, buff(), "Payload")
 
         --Header
         local p_type = get_packet_type(buff(0,1):uint())
         header_subtree:add(f_type,buff(0,1)):append_text(" ("..p_type..")")
         header_subtree:add(f_checksum,buff(1,1))
-        header_subtree:add(f_router_id, buff(2,2))
 
         --Payload
         local v_type = buff(0,1):uint()
         if v_type == 1 then
-            payload_subtree:add(f_as_number,buff(4,4))
+            local c_type  = get_criteria_type(buff(4,2):uint())
+            payload_subtree:add(f_sid,buff(2,2))
+            payload_subtree:add(f_criteria,buff(4,2):append_text(" ("..c_type..")"))
+            payload_subtree:add(f_stream_number,buff(6,2))
+            local v_cri = buff(4,2):uint()
+            if v_cri == 3 then
+                payload_subtree:add(f_k,buff(8,4))
+            elseif v_cri == 4 then
+                payload_subtree:add(f_w,buff(8,4))
+            elseif v_cri == 5 then
+                payload_subtree:add(f_k,buff(8,4))
+                payload_subtree:add(f_k1,buff(12,4))
+            elseif v_cri == 6 then
+                payload_subtree:add(f_k,buff(8,4))
+                payload_subtree:add(f_k1,buff(12,4))
+                payload_subtree:add(f_w,buff(16,4))
+            end
         elseif v_type == 2 then
-            local paths_subtree = payload_subtree:add(p_NDVP, buff(), "Paths")
-            local v_path_number = buff(4,4):uint()
-            payload_subtree:add(f_paths_number,buff(4,4))
-            for i = 0, v_path_number-1 do
-                local path_name = string.format("path[%d] information",i)
-                local sing_path_subtree = paths_subtree:add(p_NDVP, buff(), path_name)
-
-                sing_path_subtree:add(f_path_sid, buff(16*i+8, 2))
-                sing_path_subtree:add(f_path_label, buff(16*i+10, 2))
-                sing_path_subtree:add(f_path_delay, buff(16*i+12, 4))
-                sing_path_subtree:add(f_path_bandwidth, buff(16*i+16, 4))
-                sing_path_subtree:add(f_path_com, buff(16*i+20, 4))
-            end
+            payload_subtree:add(f_stream_number,buff(2,2))
         elseif v_type == 3 then
-            local paths_invalid_subtree = payload_subtree:add(p_NDVP, buff(), "Invalid Paths")
-            local v_path_invalid_number = buff(4,4):uint()
-            payload_subtree:add(f_paths_invalid_number,buff(4,4))
-            for i = 0, v_path_invalid_number-1 do
-                local path_invalid_name = string.format("Invalid path[%d] information",i)
-                local sing_path_invalid_subtree = paths_invalid_subtree:add(p_NDVP, buff(), path_invalid_name)
-
-                sing_path_invalid_subtree:add(f_path_invalid_sid, buff(4*i+8, 2))
-                sing_path_invalid_subtree:add(f_path_invalid_label, buff(4*i+10, 2))
-            end
+            local v_content_len = buff(2,2):uint()
+            payload_subtree:add(f_content_length,buff(2,2):append_text("*16Byte"))
+            payload_subtree:add(f_label,buff(4,2))
+            payload_subtree:add(f_stream_number,buff(6,2))
+            payload_subtree:add(f_payload,buff(8,v_content_len*16))
         end
         return
     end
 
     local udp_port = DissectorTable.get("udp.port")
-    --因为我们的NDVP协议的接受端口肯定是12345，所以这里只需要添加到"udp.port"这个DissectorTable里，并且指定值为12345即可。
-    udp_port:add(12345, p_NDVP)
+    --因为我们的NAP协议的接受端口肯定是12346，所以这里只需要添加到"udp.port"这个DissectorTable里，并且指定值为12346即可。
+    udp_port:add(12346, p_NAP)
 end

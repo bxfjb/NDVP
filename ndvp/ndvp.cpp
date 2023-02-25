@@ -15,6 +15,8 @@ int Router::SendHello() {
     struct sockaddr_in addr;
 
     struct HelloPacket hello;
+    hello.type = 1;
+    hello.checksum = 0;
     hello.router_id = htons(m_router_id);
     hello.AS_number = htonl(m_AS_number);
 
@@ -446,8 +448,14 @@ void Router::ShowInfo() {
             auto p = i.second[j];
             std::cout << "Path[" << j << "]";
             std::cout << " Delay:" << p.attr.delay << "ms, Bandwidth:" << p.attr.bandwidth << "kbps, Computing rate:" << p.attr.computing_rate << "kb/s,";
-            std::cout << "  Next Hop:[" << p.next_hop_id << "], In Label:[" << p.in_label << "], Out Label:[" << p.out_label << "]" << std::endl;
+            std::cout << " Next Hop:[" << p.next_hop_id << "], In Label:[" << p.in_label << "], Out Label:[" << p.out_label << "]" << std::endl;
         }
+    }
+    std::cout << "-----------------FIB Buffer" << std::endl;
+    for (auto &i:m_buff_fib) {
+        auto p = i.second;
+        std::cout << "Stream[" << i.first << "]:" << " Delay:" << p.attr.delay << "ms, Bandwidth:" << p.attr.bandwidth << "kbps, Computing rate:" << p.attr.computing_rate << "kb/s,";
+        std::cout << " Next Hop:[" << p.next_hop_id << "], In Label:[" << p.in_label << "], Out Label:[" << p.out_label << "]" << std::endl;
     }
     std::cout << std::endl << "-----------------ShowOver-----------------" << std::endl;
 }
@@ -507,23 +515,23 @@ void Router::CalculateBestPath(RequestPacket *request)
         for (int i = 1;i < path_set->second.size();++i) {
             Path* next = &path_set->second[i];
             if (request->criteria == 1 || request->criteria == 2) {
-                if (better(path->attr, next->attr, request->criteria)) {
+                if (better(next->attr, path->attr, request->criteria)) {
                     path = next;
                 }
             } else if (request->criteria == 3) {
-                if (better(path->attr, next->attr, request->criteria, request->info[0])) {
+                if (better(next->attr, path->attr, request->criteria, request->info[0])) {
                     path = next;
                 }
             } else if (request->criteria == 4) {
-                if (better(path->attr, next->attr, request->criteria, 0, 0, request->info[0])) {
+                if (better(next->attr, path->attr, request->criteria, 0, 0, request->info[0])) {
                     path = next;
                 }
             } else if (request->criteria == 5) {
-                if (better(path->attr, next->attr, request->criteria, request->info[0], request->info[1])) {
+                if (better(next->attr, path->attr, request->criteria, request->info[0], request->info[1])) {
                     path = next;
                 }
             } else if (request->criteria == 6) {
-                if (better(path->attr, next->attr, request->criteria, request->info[0], request->info[1], request->info[2])) {
+                if (better(next->attr, path->attr, request->criteria, request->info[0], request->info[1], request->info[2])) {
                     path = next;
                 }
             }
