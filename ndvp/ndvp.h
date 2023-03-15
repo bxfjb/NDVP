@@ -90,6 +90,13 @@ struct AdvertiseInvalidPacket {
     PathInvalidInPacket paths[];
 };
 
+struct AdvertiseComputationPacket {
+    uint8_t type = 4;
+    uint8_t checksum = 0;
+    uint16_t sid{};
+    uint32_t computation_rate{};
+};
+
 struct RequestPacket {
     uint8_t type = 1;
     uint8_t checksum = 0;
@@ -144,23 +151,35 @@ public:
     Router(uint16_t router_id, uint32_t AS_number, std::vector<std::pair<const char*,const char*>>&local_ip, int proto_type = 0):
         m_router_id(router_id), m_AS_number(AS_number), m_local_ip(local_ip), m_proto_type(proto_type) {
             m_port = NDVP_PORT;
-            read_edge_data();
-            RecvWork();
+            if (m_role == 0)
+            {
+                read_edge_data();
+                RecvWork();
+                
+                sleep(FIRST_HELLO);
+                SendHello();
+            }
             
-            sleep(FIRST_HELLO);
-            SendHello();
-            sleep(5);
-            read_com_data();
         }
+    Router(std::string egress_addr, int server_id):m_egrss_ip(egress_addr), m_role(1), m_server_id(server_id) {
+        if (m_role == 1) {
+            read_com_data();
+            std::cout << "Read Com finished\n";
+            SendComputationAdvertise();
+            std::cout << "Send Com Adver finished\n";
+        }
+    }
 
     ~Router() {
-        for (auto &t:m_recv_threads)
-            t.join();
-        m_adj_in_thread.join();
-        m_adj_ini_thread.join();
-        m_adj_out_thread.join();
-        m_adj_outi_thread.join();
-        fprintf(stdout, "R[%u] End\n", m_router_id);
+        if (m_role == 0) {
+            for (auto &t:m_recv_threads)
+                t.join();
+            m_adj_in_thread.join();
+            m_adj_ini_thread.join();
+            m_adj_out_thread.join();
+            m_adj_outi_thread.join();
+            fprintf(stdout, "R[%u] End\n", m_router_id); 
+        }
     }
     
     uint16_t m_router_id;
@@ -194,9 +213,16 @@ public:
     std::mutex m_adj_outi_mutex;
     std::mutex m_peer_table_mutex;
 
+    int m_role = 0; // 0--router 1--server
+    int m_server_id = 0;
+    std::string m_egrss_ip;
+    uint16_t m_sid;
+    uint32_t m_com_rate;
+
     int SendHello();                            // broadcast Hello packet
     int SendAdvertise();
     int SendAdvertiseInvalid();
+    int SendComputationAdvertise();
 
     int ResponseHello(const char* peer_addr);   // unicast Hello packet to peer 
 
@@ -205,6 +231,7 @@ public:
     int ParseHello(const char* data, struct HelloPacket* hello);
     int ParseAdvertise(const char* data, struct AdvertisePacket* advertise);
     int ParseAdvertiseInvalid(const char* data, struct AdvertiseInvalidPacket* advertise);
+    int ParseComputationAdvertise(const char* data, struct AdvertiseComputationPacket* advertise);
 
     void DealAdjIn();
     void DealAdjInInvalid();

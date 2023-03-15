@@ -4,9 +4,9 @@ do
     --Header
     local f_type = ProtoField.uint8("NDVP.type","type", base.DEC)
     local f_checksum = ProtoField.uint8("NDVP.checksum", "checksum", base.HEX)
-    local f_router_id = ProtoField.uint16("NDVP.originator_id", "originator_id", base.DEC)
 
     --Payload
+    local f_router_id = ProtoField.uint16("NDVP.originator_id", "originator_id", base.DEC)
     local f_as_number = ProtoField.uint32("NDVP.as_number", "as_number", base.DEC)
 
     local f_paths_number = ProtoField.uint32("NDVP.path_number", "path_number", base.DEC)
@@ -20,12 +20,16 @@ do
     local f_path_invalid_sid = ProtoField.uint16("NDVP.invalid_path.sid", "sid", base.DEC)
     local f_path_invalid_label = ProtoField.uint16("NDVP.invalid_path.label", "label", base.DEC)
 
+    local f_sid = ProtoField.uint16("NDVP.com_adver.sid", "sid", base.DEC)
+    local f_com_rate = ProtoField.uint32("NDVP.com_adver.com_rate", "rate", base.DEC)
+
     --这里把NDVP协议的全部字段都加到p_NDVP这个变量的fields字段里
     p_NDVP.fields = {
         f_type, f_checksum, f_router_id,
         f_as_number,
         f_paths_number, f_path_sid, f_path_label, f_path_delay, f_path_bandwidth, f_path_com,
-        f_paths_invalid_number,  f_path_invalid_sid, f_path_invalid_label
+        f_paths_invalid_number,  f_path_invalid_sid, f_path_invalid_label,
+        f_sid, f_com_rate
     }
 
     local function get_packet_type(type)
@@ -37,6 +41,8 @@ do
             packet_type = "NDVP_ADVERTISE"
         elseif type == 3 then
             packet_type = "NDVP_INVALID"
+        elseif typ3 == 4 then
+            packet_type = "NDVP_COMPUTATION_ADVERTISE"
         end
 
         return packet_type
@@ -59,13 +65,15 @@ do
         local p_type = get_packet_type(buff(0,1):uint())
         header_subtree:add(f_type,buff(0,1)):append_text(" ("..p_type..")")
         header_subtree:add(f_checksum,buff(1,1))
-        header_subtree:add(f_router_id, buff(2,2))
+        
 
         --Payload
         local v_type = buff(0,1):uint()
         if v_type == 1 then
+            payload_subtree:add(f_router_id, buff(2,2))
             payload_subtree:add(f_as_number,buff(4,4))
         elseif v_type == 2 then
+            payload_subtree:add(f_router_id, buff(2,2))
             local paths_subtree = payload_subtree:add(p_NDVP, buff(), "Paths")
             local v_path_number = buff(4,4):uint()
             payload_subtree:add(f_paths_number,buff(4,4))
@@ -80,6 +88,7 @@ do
                 sing_path_subtree:add(f_path_com, buff(16*i+20, 4))
             end
         elseif v_type == 3 then
+            payload_subtree:add(f_router_id, buff(2,2))
             local paths_invalid_subtree = payload_subtree:add(p_NDVP, buff(), "Invalid Paths")
             local v_path_invalid_number = buff(4,4):uint()
             payload_subtree:add(f_paths_invalid_number,buff(4,4))
@@ -90,6 +99,9 @@ do
                 sing_path_invalid_subtree:add(f_path_invalid_sid, buff(4*i+8, 2))
                 sing_path_invalid_subtree:add(f_path_invalid_label, buff(4*i+10, 2))
             end
+        elseif v_type == 4 then
+            payload_subtree:add(f_sid, buff(2,2))
+            payload_subtree:add(f_com_rate,buff(4,4))
         end
         return
     end

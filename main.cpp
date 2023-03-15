@@ -11,6 +11,7 @@
 
 // NetworkSystem 0 [0-2] router-id [local_ip] [0-1]
 // NetworkSystem 1 server_ip
+// NetworkSystem 2 egress_ip
 int main(int argc,char *argv[]) {
     if (atoi(argv[1]) == 0)
     {
@@ -34,6 +35,11 @@ int main(int argc,char *argv[]) {
     else if (atoi(argv[1]) == 1) {
         std::string server_addr = std::string(argv[2]);
         auto c = std::make_shared<Client>(server_addr);
+    }
+    else if (atoi(argv[1]) == 2) {
+        std::string egress_addr = std::string(argv[2]);
+        int server_id = atoi(argv[3]);
+        auto c = std::make_shared<Router>(egress_addr, server_id);
     }
 
 }

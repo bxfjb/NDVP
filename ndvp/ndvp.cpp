@@ -154,6 +154,39 @@ int Router::SendAdvertiseInvalid() {
     return 0;
 }
 
+int Router::SendComputationAdvertise()
+{
+    int ret, socket;
+    struct sockaddr_in addr;
+
+    auto adver = (AdvertiseComputationPacket *)malloc(sizeof(AdvertiseComputationPacket));
+    memset(adver, 0, sizeof(AdvertiseComputationPacket));
+    adver->type = 4;
+    adver->checksum = 0;
+    adver->sid = htons(m_sid);
+    adver->computation_rate = htonl(m_com_rate);
+
+    socket = NetUtil::makeSocket(SOCK_DGRAM, 0);
+
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = inet_addr(m_egrss_ip.c_str());
+    addr.sin_port = htons(NDVP_PORT);
+
+    fprintf(stdout, "Sended com adver type[%hu], checksum[%hu], sid:[%hu], com_rate:[%u]\n",
+                    adver->type, adver->checksum, adver->sid, adver->computation_rate);
+    
+    ret = sendto(socket, (char*)adver, sizeof(adver), 0, (struct sockaddr*)&addr, sizeof(addr));
+    if (ret < 1) {
+        perror("sendto");
+        return -1;
+    }
+
+    free(adver);
+    close(socket);
+
+    return 0;
+}
+
 int Router::RecvPacket(const char* local_ip) {
     int ret, socket;
     struct sockaddr_in addr;
@@ -218,6 +251,12 @@ int Router::RecvPacket(const char* local_ip) {
                 int ret = ParseAdvertiseInvalid(buff, advertise);
                 fprintf(stdout, "Get AdverInvalid from id[%hu], number of path: [%hu], parse result: [%d]\n",
                                         advertise->router_id, advertise->path_num, ret);
+                free(advertise);
+            }else if (type == 4) {
+                AdvertiseComputationPacket* advertise = (AdvertiseComputationPacket*)malloc(sizeof(AdvertiseComputationPacket));
+                int ret = ParseComputationAdvertise(buff, advertise);
+                fprintf(stdout, "Get AdverCom sid[%hu], computing rate: [%hu], parse result: [%d]\n",
+                                        advertise->sid, advertise->computation_rate, ret);
                 free(advertise);
             } else {
                 fprintf(stderr, "Unknown packet type:[%d]\n",type);
@@ -306,6 +345,26 @@ int Router::ParseAdvertiseInvalid(const char* data, struct AdvertiseInvalidPacke
 
         m_adj_in_invalid.emplace_back(piip,advertise->router_id);
     }
+    return 0;
+}
+
+int Router::ParseComputationAdvertise(const char *data, AdvertiseComputationPacket *advertise)
+{
+    uint16_t sid_net;
+    uint32_t com_rate_net;
+    memcpy(&sid_net, data+2, 2);
+    memcpy(&com_rate_net, data+4, 4);
+    advertise->sid = ntohs(sid_net);
+    advertise->computation_rate = ntohl(com_rate_net);
+
+    PathInPacket pip;
+    pip.attr.delay = 0;
+    pip.attr.bandwidth = UINT32_MAX;
+    pip.attr.computing_rate = advertise->computation_rate;
+    pip.sid = advertise->sid;
+    pip.in_label = 0;
+    std::lock_guard<std::mutex> lock(m_adj_in_mutex);
+    m_adj_in.emplace_back(pip,m_router_id);
     return 0;
 }
 
@@ -564,7 +623,8 @@ std::pair<uint16_t, std::string> Router::GetLabelByLabel(uint16_t label)
 void Router::init()
 {
     read_edge_data();
-    read_com_data();
+    if (m_role == 1)
+        read_com_data();
 }
 
 void Router::read_edge_data()
@@ -605,7 +665,7 @@ void Router::read_com_data()
     std::ifstream ifs;
     uint16_t sid;
     uint32_t com;
-    std::string com_file = "com_" + std::to_string(m_router_id) + ".tsv";
+    std::string com_file = "com_" + std::to_string(m_server_id) + ".tsv";
     ifs.open(com_file, std::ios::in);
     if(!ifs.is_open())
     {
@@ -614,18 +674,20 @@ void Router::read_com_data()
     while (std::getline(ifs, data)) {
         datastr << data;
         datastr >> sid >> com;
-        PathInPacket pip;
-        pip.sid = sid;
-        pip.in_label = 0;
-        pip.attr.delay = 0;
-        pip.attr.bandwidth = UINT32_MAX;
-        pip.attr.computing_rate = com;
-        //fprintf(stdout, "Read in com data sid:%hu, com:%u\n", sid, com);
-        {
-            std::lock_guard<std::mutex> lock(m_adj_in_mutex);
-            m_adj_in.emplace_back(pip, m_router_id);
-        }
-        //fprintf(stdout, "Save com data sid:%hu, com:%u\n", sid, com);
+        m_sid = sid;
+        m_com_rate = com;
+        // PathInPacket pip;
+        // pip.sid = sid;
+        // pip.in_label = 0;
+        // pip.attr.delay = 0;
+        // pip.attr.bandwidth = UINT32_MAX;
+        // pip.attr.computing_rate = com;
+        // //fprintf(stdout, "Read in com data sid:%hu, com:%u\n", sid, com);
+        // {
+        //     std::lock_guard<std::mutex> lock(m_adj_in_mutex);
+        //     m_adj_in.emplace_back(pip, m_router_id);
+        // }
+        fprintf(stdout, "Save com data sid:%hu, com:%u\n", sid, com);
         datastr.clear();
     }
 }
